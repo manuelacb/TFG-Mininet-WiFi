@@ -102,11 +102,11 @@ El contenido del script meshAP.py es el siguiente: \par
 \begin{lstlisting}
 #!/usr/bin/python
 
-"""
+'''
 This example shows on how to create wireless link between two APs 
 with mesh
 The wireless mesh network is based on IEEE 802.11s
-"""
+'''
 
 from mininet.log import setLogLevel, info
 from mn_wifi.link import wmediumd, mesh
@@ -116,10 +116,10 @@ from mn_wifi.wmediumdConnector import interference
 
 
 def topology():
-"Create a network."
+'Create a network.'
 net = Mininet_wifi(link=wmediumd, wmediumd_mode=interference)
 
-info("*** Creating nodes\n")
+info('*** Creating nodes\n')
 sta1 = net.addStation('sta1', mac='00:00:00:00:00:11', 
 	position='1,1,0')
 sta2 = net.addStation('sta2', mac='00:00:00:00:00:12', 
@@ -130,10 +130,10 @@ ap2 = net.addAccessPoint('ap2', wlans=2, ssid='ssid2',
 	position='30,10,0')
 c0 = net.addController('c0')
 
-info("*** Configuring wifi nodes\n")
+info('*** Configuring wifi nodes\n')
 net.configureWifiNodes()
 
-info("*** Associating Stations\n")
+info('*** Associating Stations\n')
 net.addLink(sta1, ap1)
 net.addLink(sta2, ap2)
 net.addLink(ap1, intf='ap1-wlan2', cls=mesh, ssid='mesh-ssid', 
@@ -141,16 +141,16 @@ net.addLink(ap1, intf='ap1-wlan2', cls=mesh, ssid='mesh-ssid',
 net.addLink(ap2, intf='ap2-wlan2', cls=mesh, ssid='mesh-ssid', 
 	channel=5)
 
-info("*** Starting network\n")
+info('*** Starting network\n')
 net.build()
 c0.start()
 ap1.start([c0])
 ap2.start([c0])
 
-info("*** Running CLI\n")
+info('*** Running CLI\n')
 CLI(net)
 
-info("*** Stopping network\n")
+info('*** Stopping network\n')
 net.stop()
 
 
@@ -191,6 +191,263 @@ Sin embargo, aún falta conocer cuáles son las interfaces de los nodos, cómo s
 \section{Establecimiento de la conexión y configuración de las interfaces}
 
 \section{Análisis de los flujos de datos con \textit{pingall}}
+
+
+Hay que recordar que el comando \textit{pingall} se encarga de ejecutar un mensaje \textit{ping} entre todas las estaciones base que componen una red. En la red meshAP, por tanto, se generarán 2 \textit{pings}: uno desde sta1 hacia sta2, y otro en el sentido contrario.\par
+
+Los mensajes \textit{ping} funcionan de la siguiente manera: la estación origen envía un paquete \texttt{ICMP echo request} hacia la estación destino, que debe contestar con otro mensaje \texttt{ICMP echo reply}. Si la estación base origen no conoce la dirección MAC de la estación destino, además se generan mensajes \texttt{ARP request} y \texttt{ARP reply}. En el \texttt{ARP request}, la estación origen envía el mensaje a todos los nodos (estaciones base, puntos de acceso, \textit{hosts}) a los que se encuentra conectada, es decir, lo envía a la dirección de broadcast (ff:ff:ff:ff:ff:ff). En este mensaje, origen pregunta quién tiene la dirección IP destino del \texttt{ICMP echo request}, y el nodo al que pertenezca dicha IP responde con su dirección MAC en un mensaje \texttt{ARP reply} a la estación origen. Una vez conocida la dirección MAC del destino, el origen envía el \texttt{ICMP echo request}. Cuando el destino lo recibe, puede ocurrir que tampoco tenga la dirección MAC del origen, si se ha borrado de su caché, por lo que tendría que realizar el mismo procedimiento con los mensajes ARP para conocerla y, finalmente, enviar su respuesta ICMP echo reply a esa dirección.\par
+
+Sin embargo, en las redes SDN el proceso de mensajes se ve un poco alterado. Cuando sta1 envía su \texttt{ARP request} hacia la dirección de broadcast para conocer la dirección MAC de sta2, en primer lugar el mensaje llega al \textit{access point} ap1. Seguidamente, ap1 deberá consultar su tabla de flujos para comprobar si existe alguna entrada para tráfico \texttt{ARP request} procedente de sta1 y destinado a sta2. Si tiene alguna entrada que coincida para este tipo de tráfico, sigue las normas o acciones que se indiquen en ella. Si por el contrario, no la tiene, deberá consultar al controlador de la red qué debe hacer en ese caso.\par 
+
+Entre los \textit{access points} y el controlador de una red SDN se intercambian distintos tipos de mensajes. Normalmente el \textit{access point} consulta qué hacer y el controlador le indica a quién debe enviar el tráfico, por qué puerto, si debe eliminarlo, o si tiene que añadir una nueva entrada para ese tipo de tráfico en su tabla de flujos. Estos mensajes entre el controlador y los \textit{access points} se analizan con más detalle en el Apartado \ref{sect:capt_of} del presente capítulo.\par 
+
+A continuación se analiza el contenido de las tablas de flujos del controlador c0 de la red, y de los puntos de acceso ap1 y ap2. Como se ha indicado, estas tablas deberían tener entradas para todos los tipos de tráfico que se envían entre los nodos, tras ejecutar el comando \textit{pingall}.\par 
+
+\hspace{0.5cm}
+
+El datapath del controlador de la red tiene los siguientes puertos e interfaces:
+\texttt{\\
+\noindent system@ovs-system:\\
+	\indent lookups: hit:79 missed:37 lost:0\\
+	\indent	flows: 0\\
+	\indent	masks: hit:153 total:0 hit/pkt:1.32\\
+	\indent	port 0: ovs-system (internal)\\
+	\indent	port 1: ap1-wlan1\\
+	\indent	port 2: ap1-wlan2\\
+	\indent	port 3: ap1-mp2\\
+	\indent	port 4: ap1 (internal)\\
+	\indent	port 5: ap2-wlan1\\
+	\indent	port 6: ap2-wlan2\\
+	\indent	port 7: ap2-mp2\\
+	\indent	port 8: ap2 (internal)\\
+}\par
+
+Para comprobar los flujos que se instalan en el controlador, se debe ejecutar el siguiente comando:\par 
+
+\begin{center} 
+	\texttt{mininet-wifi> sh ovs-dpctl dump-flows}
+\end{center}
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(5),eth(src=00:00:00:00:00:12,dst=00:00:00:00:00:11),
+	eth\_type(0x0800),ipv4(src=10.0.0.2,dst=10.0.0.1,proto=1,tos=0/0xfc,frag=no),
+	icmp(type=8,code=0), packets:0, bytes:0, 	used:never, actions:7
+}
+
+Regla 1: indica que todo el tráfico ICMP ECHO (icmp\_type=8, icmp\_code=0) que entre por el puerto 5 del controlador (interfaz ap2-wlan1), con direcciones MAC origen y destino 00:00:00:00:00:12 y 00:00:00:00:00:11, respectivamente, y direcciones IP 10.0.0.2 y 10.0.0.1, origen y destino, salga por el puerto 7, interfaz ap2-mp2.\par 
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(7),eth(src=00:00:00:00:00:11,dst=00:00:00:00:00:12),
+	eth\_type(0x0800),ipv4(src=10.0.0.1,dst=10.0.0.2,proto=1,tos=0/0xfc,frag=no),
+	icmp(type=0,code=0), packets:0, bytes:0, 	used:never, actions:5
+}
+
+Regla 2: indica que todo el tráfico ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0) que entre por el puerto 7 del controlador (interfaz ap2-mp2), con direcciones MAC origen y destino 00:00:00:00:00:11 y 00:00:00:00:00:12, respectivamente, y direcciones IP 10.0.0.1 y 10.0.0.2, origen y destino, salga por el puerto 5, interfaz ap2-wlan1.\par 
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(3),eth(src=00:00:00:00:00:12,dst=00:00:00:00:00:11),
+	eth\_type(0x0800),ipv4(src=10.0.0.2,dst=10.0.0.1,proto=1,tos=0/0xfc,frag=no),
+	icmp(type=8,code=0), packets:0, bytes:0, 	used:never, actions:1
+}
+
+Regla 3: indica que todo el tráfico ICMP ECHO (icmp\_type=8, icmp\_code=0) que entre por el puerto 3 del controlador (interfaz ap1-mp2), con direcciones MAC origen y destino 00:00:00:00:00:12 y 00:00:00:00:00:11, respectivamente, y direcciones IP 10.0.0.2 y 10.0.0.1, origen y destino, salga por el puerto 1, interfaz ap1-wlan1.\par 
+
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(1),eth(src=00:00:00:00:00:11,dst=00:00:00:00:00:12),
+	eth\_type(0x0800),ipv4(src=10.0.0.1,dst=10.0.0.2,proto=1,tos=0/0xfc,frag=\\no),
+	icmp(type=0,code=0), packets:0, bytes:0, 	used:never, actions:3
+}
+
+Regla 4: indica que todo el tráfico ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0) que entre por el puerto 1 del controlador (interfaz ap1-wlan1), con direcciones MAC origen y destino 00:00:00:00:00:11 y 00:00:00:00:00:12, respectivamente, y direcciones IP 10.0.0.1 y 10.0.0.2, origen y destino, salga por el puerto 3, interfaz ap1-mp2.\par 
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(3),eth(src=00:00:00:00:00:12,dst=00:00:00:00:00:11),
+	eth\_type(0x0806),arp(sip=10.0.0.2,tip=10.0.0.1,
+	op=1/0xff), packets:0,\\
+	bytes:0, used:never, actions:1
+}
+
+Regla 5: indica que todo el tráfico ARP REQUEST (op=1) que entre por el puerto 3 del controlador (interfaz ap1-mp2), con direcciones MAC origen y destino 00:00:00:00:00:12 y 00:00:00:00:00:11, respectivamente, y direcciones IP 10.0.0.2 y 10.0.0.1, origen y destino, salga por el puerto 1, interfaz ap1-wlan1.\par
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(5),eth(src=00:00:00:00:00:12,dst=00:00:00:00:00:11),
+	eth\_type(0x0806),arp(sip=10.0.0.2,tip=10.0.0.1,op=1/0xff), packets:0, \\
+	bytes:0, used:never, actions:7
+}
+
+Regla 6: indica que todo el tráfico ARP REQUEST (op=1) que entre por el puerto 5 del controlador (interfaz ap2-wlan1), con direcciones MAC origen y destino 00:00:00:00:00:12 y 00:00:00:00:00:11, respectivamente, y direcciones IP 10.0.0.2 y 10.0.0.1, origen y destino, salga por el puerto 7, interfaz ap2-mp2.\par 
+
+\hspace{1cm}
+
+Para ver la tabla de flujos del \textit{access point} ap1, hay que ejecutar el siguiente comando:\par 
+
+\begin{center}
+	\texttt{mininet-wifi> sh ovs-ofctl dump-flows ap1}
+\end{center}
+
+\noindent\texttt{
+	cookie=0x0, duration=5.054s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535, arp,
+	in\_port='ap1-mp2',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:12,dl\_dst=00:00:00:00:00:11,
+	arp\_spa=10.0.0.2,arp\_tpa=10.0.0.1,arp\_\\
+	op=2 actions=output:'ap1-wlan1'
+}
+ 
+Los paquetes ARP REPLY (arp\_op=2) que entran a ap1 por su interfaz ‘ap1-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ARP 10.0.0.2 y destino ARP 10.0.0.1, saldrán por la interfaz ‘ap1-wlan1’ de ap1. No corresponde con ninguna regla del controlador, probablemente ap1 aprenda de la regla instalada para el ARP REQUEST.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=9.892s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,arp,
+	in\_port='ap1-mp2',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:12,dl\_dst=00:00:00:00:00:11,
+	arp\_spa=10.0.0.2,arp\_tpa=10.0.0.1,arp\_op\\
+	=1 actions=output:'ap1-wlan1'
+} 
+
+Los paquetes ARP REQUEST (arp\_op=1) que entran a ap1 por su interfaz ‘ap1-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ARP 10.0.0.2 y destino ARP 10.0.0.1, saldrán por la interfaz ‘ap1-wlan1’ de ap1. Corresponde con la regla 5 del controlador.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=9.889s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	arp,in\_port='ap1-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00\\
+	:00:00:11,dl\_dst=00:00:00:00:00:12,
+	arp\_spa=10.0.0.1,arp\_tpa=10.0.0.2,arp\_op\\
+	=2 actions=output:'ap1-mp2'
+}
+
+Los paquetes ARP REPLY (arp\_op=2) que entran a ap1 por su interfaz ‘ap1-wlan1’, cuyo origen es la dirección MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ARP 10.0.0.1 y destino ARP 10.0.0.2, saldrán por la interfaz ‘ap1-mp2’ de ap1. No corresponde con ninguna regla del controlador, probablemente ap1 aprenda de la regla instalada para el ARP REQUEST.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=5.051s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	icmp,in\_port='ap1-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:11,dl\_dst=00:00:00:00:00:12,
+	nw\_src=10.0.0.1,nw\_dst=10.0.0.2,nw\_tos=0,\\
+	icmp\_type=8,icmp\_code=0 actions=output:'ap1-mp2'
+}
+
+Los paquetes ICMP ECHO (icmp\_type=8, icmp\_code=0) que entran a ap1 por su interfaz ‘ap1-wlan1’, cuyo origen es la dirección MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ICMP 10.0.0.1 y destino ICMP 10.0.0.2, saldrán por la interfaz ‘ap1-mp2’ de ap1.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=5.036s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	icmp,in\_port='ap1-mp2',vlan\_tci=0x0000,dl\_src=00:00:00\\
+	:00:00:12,dl\_dst=00:00:00:00:00:11,
+	nw\_src=10.0.0.2,nw\_dst=10.0.0.1,nw\_tos=0,\\
+	icmp\_type=0,icmp\_code=0 actions=output:'ap1-wlan1'
+}
+
+Los paquetes ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0) que entran a ap1 por su interfaz ‘ap1-mp2’, con dirección MAC origen 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ICMP 10.0.0.2 y destino ICMP 10.0.0.1, saldrán por la interfaz ‘ap1-wlan1’ de ap1.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=5.027s,table=0,n\_packets=0,n\_bytes=0, idle\_timeout=60,\\
+	priority=65535,
+	icmp,in\_port='ap1-mp2',vlan\_tci=0x0000,dl\_src=00:00:00\\
+	:00:00:12,dl\_dst=00:00:00:00:00:11,
+	nw\_src=10.0.0.2,nw\_dst=10.0.0.1,nw\_tos=0,\\
+	icmp\_type=8,icmp\_code=0 actions=output:'ap1-wlan1'
+}
+
+Los paquetes ICMP ECHO (icmp\_type=8, icmp\_code=0) que entran a ap1 por su interfaz ‘ap1-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ICMP 10.0.0.2 y destino ICMP 10.0.0.1, saldrán por la interfaz ‘ap1-wlan1’ de ap1.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=5.024s,table=0,n\_packets=0,n\_bytes=0, idle\_timeout\\
+	=60,priority=65535,
+	icmp,in\_port='ap1-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:11,dl\_dst=00:00:00:00:00:12,
+	nw\_src=10.0.0.1,nw\_dst=10.0.0.2,nw\_tos=0,\\
+	icmp\_type=0,icmp\_code=0 actions=output:'ap1-mp2'
+}
+
+Los paquetes ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0) que entran a ap1 por su interfaz ‘ap1-wlan1’,CON origen MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ICMP 10.0.0.1 y destino ICMP 10.0.0.2, saldrán por la interfaz ‘ap1-mp2’ de ap1.\par 
+
+\hspace{1cm}
+
+El mismo comando se ejecuta para ap2:\par 
+
+\begin{center}
+	\texttt{mininet-wifi> sh ovs-ofctl dump-flows ap2}
+\end{center}
+
+Los flujos que se obtienen para ap2 son los siguientes:\par
+
+\noindent\texttt{
+	cookie=0x0, duration=6.802s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	arp,in\_port='ap2-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:12,dl\_dst=00:00:00:00:00:11,
+	arp\_spa=10.0.0.2,arp\_tpa=10.0.0.1,arp\_op=2 actions=output:'ap2-mp2'
+}
+
+Los paquetes ARP REPLY (arp\_op=2) que entran a ap2 por su interfaz ‘ap2-wlan1’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ARP 10.0.0.2 y destino ARP 10.0.0.1, saldrán por la interfaz ‘ap2-mp2’ de ap2.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=1.531s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	arp,in\_port='ap2-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:12,dl\_dst=00:00:00:00:00:11,
+	arp\_spa=10.0.0.2,arp\_tpa=10.0.0.1,arp\_op=1 actions=output:'ap2-mp2'
+}
+
+Los paquetes ARP REQUEST (arp\_op=1) que entran a ap2 por su interfaz ‘ap2-wlan1’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ARP 10.0.0.2 y destino ARP 10.0.0.1, saldrán por la interfaz ‘ap2-mp2’ de ap2.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=1.520s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,arp,
+	in\_port='ap2-mp2',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:11,dl\_dst=00:00:00:00:00:12,
+	arp\_spa=10.0.0.1,arp\_tpa=10.0.0.2,arp\_op=2 actions=output:'ap2-wlan1'
+}
+
+Los paquetes ARP REPLY (arp\_op=2) que entran a ap2 por su interfaz ‘ap2-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ARP 10.0.0.1 y destino ARP 10.0.0.2, saldrán por la interfaz ‘ap2-wlan1’ de ap2.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=6.788s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	icmp,in\_port='ap2-mp2',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:11,dl\_dst=00:00:00:00:00:12,
+	nw\_src=10.0.0.1,nw\_dst=10.0.0.2,nw\_tos=0,\\
+	icmp\_type=8,icmp\_code=0 actions=output:'ap2-wlan1'
+}
+
+Los paquetes ICMP ECHO (icmp\_type=8, icmp\_code=0, nw\_tos=0) que entran a ap2 por su interfaz ‘ap2-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ICMP 10.0.0.1 y destino ICMP 10.0.0.2, saldrán por la interfaz ‘ap2-wlan1’ de ap2.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=6.784s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	icmp,in\_port='ap2-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:12,dl\_dst=00:00:00:00:00:11,
+	nw\_src=10.0.0.2,nw\_dst=10.0.0.1,nw\_tos=0,\\
+	icmp\_type=0,icmp\_code=0 actions=output:'ap2-mp2'
+}
+
+Los paquetes ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0, nw\_tos=0) que entran a ap2 por su interfaz ‘ap2-wlan1’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ICMP 10.0.0.2 y destino ICMP 10.0.0.1, saldrán por la interfaz ‘ap2-mp2’ de ap2.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=6.773s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	icmp,in\_port='ap2-wlan1',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:12,dl\_dst=00:00:00:00:00:11,
+	nw\_src=10.0.0.2,nw\_dst=10.0.0.1,nw\_tos=0,\\
+	icmp\_type=8,icmp\_code=0 actions=output:'ap2-mp2'
+}
+
+Los paquetes ICMP ECHO (icmp\_type=8, icmp\_code=0, nw\_tos=0) que entran a ap2 por su interfaz ‘ap2-wlan1’, cuyo origen es la dirección MAC 00:00:00:00:00:12 y destino 00:00:00:00:00:11, con dirección origen de ICMP 10.0.0.2 y destino ICMP 10.0.0.1, saldrán por la interfaz ‘ap2-mp2’ de ap2.\par 
+
+\noindent\texttt{
+	cookie=0x0, duration=6.763s, table=0, n\_packets=0, n\_bytes=0, idle\_timeout\\
+	=60, priority=65535,
+	icmp,in\_port='ap2-mp2',vlan\_tci=0x0000,dl\_src=00:00:00:\\
+	00:00:11,dl\_dst=00:00:00:00:00:12,
+	nw\_src=10.0.0.1,nw\_dst=10.0.0.2,nw\_tos=0,\\
+	icmp\_type=0,icmp\_code=0 actions=output:'ap2-wlan1'
+}
+
+Los paquetes ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0, nw\_tos=0) que entran a ap2 por su interfaz ‘ap2-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ICMP 10.0.0.1 y destino ICMP 10.0.0.2, saldrán por la interfaz ‘ap2-wlan1’ de ap2.\par 
+
+\section{Capturando el tráfico OpenFlow entre el controlador y los \textit{access points}}\label{sect:capt_of}
 
 \section{Topología completa resultante}
 
