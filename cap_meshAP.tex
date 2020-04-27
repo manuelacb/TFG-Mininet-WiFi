@@ -160,23 +160,40 @@ topology()
 \end{lstlisting}
 
 Se trata de una red mesh de medio inalámbrico \
-($link=wmedium$) con interferencias ($wmedium\_mode=interference$). El simulador se encarga de calcular el nivel de interferencia en base a la distancia existente entreun nodo y sus nodos adyacentes. También se desprende del script que la red presenta el controlador propio de las redes definidas por software, conocidas como redes SDN por sus siglas en inglés.\par
+($link=wmedium$) con interferencias ($wmedium\_mode=interference$). El simulador se encarga de calcular el nivel de interferencia en base a la distancia existente entre un nodo y sus nodos adyacentes. También se desprende del script que la red presenta el controlador propio de las redes definidas por software, conocidas como redes SDN por sus siglas en inglés.\par
 
-Los dos access points de la red mesh configurada en el script presentan cada uno de ellos dos WLANs, una de ellas con configuración mesh. Además se indica las direcciones ethernet de las dos estaciones base \textit{sta1} y \textit{sta2}.\par
+Los dos puntos de acceso (\textit{access points} (APs) en adelante) de la red mesh configurada en el script presentan cada uno de ellos dos WLANs, una de ellas con configuración mesh. Además se indica las direcciones MAC de las dos estaciones base \textit{sta1} y \textit{sta2}.\par
 
 Respecto a los enlaces entre los diferentes nodos de la red, se observa que se configura un enlace entre \textit{ap1} y \textit{ap1} y otro entre \textit{sta2} y \textit{ap2}. En \textit{ap1} y \textit{ap2} además se configuran las interfaces 'ap1-wlan2' y 'ap2-wlan2' como enlaces mesh en el canal 5 de la red.\par
 
-\section{Topología}
+\section{Topología inicial}
 
-En la Figura \ref{fig:pos} se representa la posición de los nodos y APs de la red.\par
+En la Figura \ref{fig:pos} se representa la posición de los nodos y APs de la red, obtenida mediante el módulo de representación que ofrece el entorno Mininet Wifi.
 
+	\begin{figure}[!h]
+		\centering
+		\includegraphics[scale=0.7]{Figuras/posicion.png}
+		\caption{Posición de los nodos de la red meshAP.}
+		\label{fig:pos}
+	\end{figure}
 
-\begin{figure}[!h]
-	\centering
-	\includegraphics[scale=1]{Figuras/posicion.png}
-	\caption{Posición de los nodos de la red meshAP.}
-	\label{fig:pos}
-\end{figure}
+Con la información que se tiene hasta el momento (la que aporta el script meshAP.py y la posición de los equipos de la red), se puede determinar que la topología de la red mesh es la indicada en la Figura \ref{fig:topo_inicial}, a falta de conocer cuáles son las interfaces que se conectan entre los diferentes equipos.\par
+
+	\begin{figure}[!h]
+		\centering
+		\includegraphics[scale=.4]{Figuras/topo_inicial.png}
+		\caption{Topología de la red meshAP.}
+		\label{fig:topo_inicial}
+	\end{figure}
+
+Sin embargo, aún falta conocer cuáles son las interfaces de los nodos, cómo se conectan entre ellas y qué papel tiene en estas conexiones el controlador de la red. En los siguientes apartados del presente capítulo se analizará el funcionamiento de la red en ejecución para comprender cómo funciona realmente una red mesh definida por software y poder completar el esquema de la topología de la red analizada.\par
+
+\section{Establecimiento de la conexión y configuración de las interfaces}
+
+\section{Análisis de los flujos de datos con \textit{pingall}}
+
+\section{Topología completa resultante}
+
 
 
 \end{document}
