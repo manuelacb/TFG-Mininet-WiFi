@@ -190,10 +190,10 @@ Sin embargo, aún falta conocer cuáles son las interfaces de los nodos, cómo s
 
 \section{Establecimiento de la conexión y configuración de las interfaces}
 
-\section{Análisis de los flujos de datos con \textit{pingall}}
+\section{Análisis de los flujos de datos con \texttt{pingall}}
 
 
-Hay que recordar que el comando \textit{pingall} se encarga de ejecutar un mensaje \textit{ping} entre todas las estaciones base que componen una red. En la red meshAP, por tanto, se generarán 2 \textit{pings}: uno desde sta1 hacia sta2, y otro en el sentido contrario.\par
+Hay que recordar que el comando \texttt{pingall} se encarga de ejecutar un mensaje \textit{ping} entre todas las estaciones base que componen una red. En la red meshAP, por tanto, se generarán 2 \textit{pings}: uno desde sta1 hacia sta2, y otro en el sentido contrario.\par
 
 Los mensajes \textit{ping} funcionan de la siguiente manera: la estación origen envía un paquete \texttt{ICMP echo request} hacia la estación destino, que debe contestar con otro mensaje \texttt{ICMP echo reply}. Si la estación base origen no conoce la dirección MAC de la estación destino, además se generan mensajes \texttt{ARP request} y \texttt{ARP reply}. En el \texttt{ARP request}, la estación origen envía el mensaje a todos los nodos (estaciones base, puntos de acceso, \textit{hosts}) a los que se encuentra conectada, es decir, lo envía a la dirección de broadcast (ff:ff:ff:ff:ff:ff). En este mensaje, origen pregunta quién tiene la dirección IP destino del \texttt{ICMP echo request}, y el nodo al que pertenezca dicha IP responde con su dirección MAC en un mensaje \texttt{ARP reply} a la estación origen. Una vez conocida la dirección MAC del destino, el origen envía el \texttt{ICMP echo request}. Cuando el destino lo recibe, puede ocurrir que tampoco tenga la dirección MAC del origen, si se ha borrado de su caché, por lo que tendría que realizar el mismo procedimiento con los mensajes ARP para conocerla y, finalmente, enviar su respuesta ICMP echo reply a esa dirección.\par
 
@@ -201,7 +201,7 @@ Sin embargo, en las redes SDN el proceso de mensajes se ve un poco alterado. Cua
 
 Entre los \textit{access points} y el controlador de una red SDN se intercambian distintos tipos de mensajes. Normalmente el \textit{access point} consulta qué hacer y el controlador le indica a quién debe enviar el tráfico, por qué puerto, si debe eliminarlo, o si tiene que añadir una nueva entrada para ese tipo de tráfico en su tabla de flujos. Estos mensajes entre el controlador y los \textit{access points} se analizan con más detalle en el Apartado \ref{sect:capt_of} del presente capítulo.\par 
 
-A continuación se analiza el contenido de las tablas de flujos del controlador c0 de la red, y de los puntos de acceso ap1 y ap2. Como se ha indicado, estas tablas deberían tener entradas para todos los tipos de tráfico que se envían entre los nodos, tras ejecutar el comando \textit{pingall}.\par 
+A continuación se analiza el contenido de las tablas de flujos del controlador c0 de la red, y de los puntos de acceso ap1 y ap2. Como se ha indicado, estas tablas deberían tener entradas para todos los tipos de tráfico que se envían entre los nodos, tras ejecutar el comando \texttt{pingall}.\par 
 
 \hspace{0.5cm}
 
@@ -448,6 +448,90 @@ Los paquetes ICMP ECHO (icmp\_type=8, icmp\_code=0, nw\_tos=0) que entran a ap2 
 Los paquetes ICMP ECHO REPLY (icmp\_type=0, icmp\_code=0, nw\_tos=0) que entran a ap2 por su interfaz ‘ap2-mp2’, cuyo origen es la dirección MAC 00:00:00:00:00:11 y destino 00:00:00:00:00:12, con dirección origen de ICMP 10.0.0.1 y destino ICMP 10.0.0.2, saldrán por la interfaz ‘ap2-wlan1’ de ap2.\par 
 
 \section{Capturando el tráfico OpenFlow entre el controlador y los \textit{access points}}\label{sect:capt_of}
+
+Para analizar el intercambio de paquetes capturados cuando se ejecuta el comando \texttt{pingall} se necesita conocer los puertos configurados en los \textit{access points} ap1 y ap2. El comando que nos indica el listado de los puertos de un \textit{access point} es (aplicado para ap1):\par 
+
+\begin{center}
+	\texttt{sh ovs-ofctl show ap1}
+\end{center}
+
+Tras ejecutarlo, en ap1 se obtiene la siguiente salida:
+
+\noindent\texttt{
+\indent OFPT\_FEATURES\_REPLY (xid=0x2): dpid:1000000000000001 n\_tables:254,    \\ 
+\indent \indent n\_buffers:0\\
+\indent capabilities: FLOW\_STATS TABLE\_STATS PORT\_STATS QUEUE\_STATS \\ 
+\indent \indent ARP\_MATCH\_IP\\
+\indent actions: output enqueue set\_vlan\_vid set\_vlan\_pcp strip\_vlan mod\_dl\_src\\ 
+\indent \indent mod\_dl\_dst mod\_nw\_src mod\_nw\_dst mod\_nw\_tos mod\_tp\_src mod\_tp\_dst\\
+\indent 1(ap1-wlan1): addr:02:00:00:00:02:00\\
+\indent \indent config:     0\\
+\indent \indent state:      0\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent 2(ap1-wlan2): addr:02:00:00:00:03:00\\
+\indent \indent config:     PORT\_DOWN\\
+\indent \indent state:      LINK\_DOWN\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent 3(ap1-mp2): addr:02:00:00:00:03:00\\
+\indent \indent config:     0\\
+\indent \indent state:      0\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent LOCAL(ap1): addr:7a:20:a9:fc:24:43\\
+\indent \indent config:     PORT\_DOWN\\
+\indent \indent state:      LINK\_DOWN\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent OFPT\_GET\_CONFIG\_REPLY (xid=0x4): frags=normal miss\_send\_len=0\\
+}\par
+
+En ap2:\par
+
+\noindent\texttt{
+\indent OFPT\_FEATURES\_REPLY (xid=0x2): dpid:1000000000000002 n\_tables:254, \\
+\indent \indent n\_buffers:0\\
+\indent capabilities: FLOW\_STATS TABLE\_STATS PORT\_STATS QUEUE\_STATS \\ 
+\indent \indent ARP\_MATCH\_IP \\
+\indent actions: output enqueue set\_vlan\_vid set\_vlan\_pcp strip\_vlan mod\_dl\_src \\ 
+\indent \indent mod\_dl\_dst mod\_nw\_src mod\_nw\_dst mod\_nw\_tos mod\_tp\_src mod\_tp\_dst\\
+\indent 1(ap2-wlan1): addr:02:00:00:00:04:00\\
+\indent \indent config:     0\\
+\indent \indent state:      0\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent 2(ap2-wlan2): addr:02:00:00:00:05:00\\
+\indent \indent config:     PORT\_DOWN\\
+\indent \indent state:      LINK\_DOWN\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent 3(ap2-mp2): addr:02:00:00:00:05:00\\
+\indent \indent config:     0\\
+\indent \indent state:      0\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent LOCAL(ap2): addr:f6:95:f1:7c:34:4a\\
+\indent \indent config:     PORT\_DOWN\\
+\indent \indent state:      LINK\_DOWN\\
+\indent \indent speed: 0 Mbps now, 0 Mbps max\\
+\indent OFPT\_GET\_CONFIG\_REPLY (xid=0x4): frags=normal miss\_send\_len=0
+}\par 
+
+Tras capturar los paquetes en la interfaz \texttt{loopback:lo}, se realiza el análisis que sigue.\par 
+
+El primer \texttt{ping} que se realiza es desde sta1 hacia sta2, por lo que ap1 es el primer punto de acceso que se comunica con el controlador. En un paquete \texttt{OFPT\_PACKET\_IN}, ap1 consulta qué debe hacer con un paquete procedente la dirección MAC 00:00:00:00:00:11 dirigido a la dirección de broadcast, y que entra por el puerto 1 de ap1, correspondiente a la interfaz \texttt{ap1-wlan1}. En la Figura \ref{fig:capt_1} se aprecia dicha interacción.\par 
+
+	\begin{figure}[!h]
+		\centering
+		\includegraphics[scale=0.5]{Figuras/capt_1.png}
+		\caption{Consulta de ap1 al controlador}
+		\label{fig:capt_1}
+	\end{figure}
+
+En su respuesta, el controlador indica mediante un paquete \texttt{OFPT\_PACKET\_OUT} que ap1 debe enviar ese tipo de tráfico por el puerto 65531, comportándose como un switch normal.\par
+
+	\begin{figure}[!h]
+		\centering
+		\includegraphics[scale=0.5]{Figuras/capt_2.png}
+		\caption{Respuesta del controlador a ap1}
+		\label{fig:capt_2}
+	\end{figure}
+
+
 
 \section{Topología completa resultante}
 
