@@ -92,7 +92,9 @@
 % Formato de las páginas
 
 \begin{document}
+	
 \chapter{Análisis script meshAP.py}
+
 \section{Configuración del script meshAP.py}
 
 Este fichero contiene la configuración de una red mesh simple que cuenta con dos access points y dos estaciones base. Dicha configuración corresponde a la de una red SDN en la que los access points funcionan como switches típicos de este tipo de redes.\par
@@ -187,7 +189,7 @@ Con la información que se tiene hasta el momento (la que aporta el script meshA
 
 	\begin{figure}[!h]
 		\centering
-		\includegraphics[scale=.4]{Figuras/topo_inicial.png}
+		\includegraphics[scale=.5]{Figuras/topo_inicial.png}
 		\caption{Topología de la red meshAP.}
 		\label{fig:topo_inicial}
 	\end{figure}
@@ -208,7 +210,7 @@ Sin embargo, aún falta conocer cuáles son las interfaces de los nodos, cómo s
 
 
 
-\section{Análisis de los flujos de datos con \texttt{pingall}}\label{sect:tablas_flujos}
+\section{Análisis de los flujos de datos con \texttt{\textbf{pingall}}}\label{sect:tablas_flujos}
 
 
 Hay que recordar que el comando \texttt{pingall} se encarga de ejecutar un mensaje \textit{ping} entre todas las estaciones base que componen una red. En la red meshAP, por tanto, se generarán 2 \textit{pings}: uno desde sta1 hacia sta2, y otro en el sentido contrario.\par
@@ -466,6 +468,44 @@ Los paquetes \texttt{ICMP echo reply} (icmp\_type=0, icmp\_code=0, nw\_tos=0) qu
 	icmp\_type=0,icmp\_code=0 actions=output:'ap2-wlan1'
 }
 
+Una vez borradas las entradas en las tablas de flujos, se procede a ejecutar nuevamente el comando \texttt{pingall} y se observan algunas diferencias en las tablas de flujos.\par 
+
+En el controlador aparecen las siguientes nuevas reglas:\par
+
+\noindent\texttt{
+	recirc\_id(0),in\_port(3),eth(src=00:00:00:00:00:12,dst=00:00:00:00:00:11),\\
+	\indent eth\_type(0x0806),arp(sip=10.0.0.2,tip=10.0.0.1,op=2/0xff), packets:0,\\
+	\indent bytes:0, used:never, actions:1\\
+	recirc\_id(0),in\_port(7),eth(src=00:00:00:00:00:11,dst=00:00:00:00:00:12),\\
+	\indent eth\_type(0x0806),arp(sip=10.0.0.1,tip=10.0.0.2,op=2/0xff), packets:0,\\
+	\indent bytes:0, used:never, actions:5\\
+	recirc\_id(0),in\_port(5),eth(src=00:00:00:00:00:12,dst=00:00:00:00:00:11),\\
+	\indent eth\_type(0x0806),arp(sip=10.0.0.2,tip=10.0.0.1,op=2/0xff), packets:0,\\
+	\indent bytes:0, used:never, actions:7\\
+	recirc\_id(0),in\_port(1),eth(src=00:00:00:00:00:11,dst=00:00:00:00:00:12),\\
+	\indent eth\_type(0x0806),arp(sip=10.0.0.1,tip=10.0.0.2,op=2/0xff), packets:0,\\
+	\indent bytes:0, used:never, actions:3
+}
+
+Sin embargo, estos flujos no aparecen inmediatamente tras ejecutar el \texttt{ping}, sino que hay que esperar varios segundos y volver a cargar las reglas del controlador. Esto se debe a que hay ocasiones en las que la propia estación base, para corroborar que las direcciones MAC que almacena en su caché ARP es correcta, envían \texttt{ARP request} a estas direcciones almacenadas. Por eso aparecen estos flujos unos segundos después de ejecutar el segundo \texttt{pingall}.\par 
+
+En ap1, aparece un flujo relacionado también con este tipo de comunicación de chequeo que hace la estación base:\par 
+
+\noindent\texttt{
+	cookie=0x0,duration=6.704s,table=0,n\_packets=0,n\_bytes=0,idle\_timeout\\
+	\indent =60, priority=65535,arp,in\_port='ap1-wlan1',vlan\_tci=0x0000,dl\_src=00:00:\\
+	\indent 00:00:00:11,dl\_dst=00:00:00:00:00:12,arp\_spa=10.0.0.1,arp\_tpa=10.0.0.2,\\
+	\indent arp\_op=1 actions=output:'ap1-mp2'
+}
+
+E igualmente en ap2: \par
+
+\noindent\texttt{
+	cookie=0x0,duration=8.475s,table=0,n\_packets=0, n\_bytes=0,idle\_timeout\\
+	\indent =60, priority=65535,arp,in\_port='ap2-mp2',vlan\_tci=0x0000,dl\_src=00:00:\\
+	\indent 00:00:00:11,dl\_dst=00:00:00:00:00:12,arp\_spa=10.0.0.1,arp\_tpa=10.0.0.2,\\
+	\indent arp\_op=1 actions=output:'ap2-wlan1'
+}
 
 
 
@@ -649,6 +689,12 @@ No obstante, a parte de indicar cómo es la instalación de estos flujos, las ca
 
 Con esta información de las conexiones entre los nodos es sencillo completar el esquema de la topología de la red mostrada en en el apartado \ref{sect:topo_inicial}. La topología resultante se muestra en el apartado \ref{sect:topo_completa}.\par 
 
+
+
+
+
+
+
 \section{Topología completa resultante}\label{sect:topo_completa}
 
 Tras conocer las conexiones de los nodos de la red, se puede completar la topología de la red, mostrada en la Figura \ref{fig:topo_completa}.\par
@@ -660,7 +706,7 @@ Tras conocer las conexiones de los nodos de la red, se puede completar la topolo
 		\label{fig:topo_completa}
 	\end{figure}
 
-Además, se ha añadido la figura del controlador en la representación. Como se ha visto en el anterior apartado \ref{sect:capt_of}, el controlador está conectado mediante la interfaz de loopback con los dos \textit{access points} ap1 y ap2, y por ello, se representa en forma de nube. Realmente se podría considerar a ap1 y a ap2 como un único punto de acceso de la red, dado que están conectados entre ellos mediante las interfaces 'ap1-mp2' y 'ap2-mp2', y solo existen en esta red configurada dos estaciones base que se comunican entre ellas. Además de por motivos físicos, también respalda la unicidad de los \textit{access points} las propiedades características de las redes SDN: el controlador se comunica con todos los puntos de acceso o \textit{swithes} de la red interconectándolos. Esto es muy útil para, por ejemplo, poder determinar qué nodos de la red están congestionados y crear rutas alternativas que disminuyan la densidad de tráfico en dichos equipos y la red se autoequilibre. Esta es una de las ventajas de este tipo de redes definidas por software, su capacidad de autogestión y autoconocimiento.\par 
+Además, se ha añadido la figura del controlador en la representación. Como se ha visto en el anterior apartado \ref{sect:capt_of}, el controlador está conectado mediante la interfaz de loopback con los dos \textit{access points} ap1 y ap2, y por ello, se representa en forma de nube. Realmente se podría considerar a ap1 y a ap2 como un único punto de acceso de la red, dado que están conectados entre ellos mediante las interfaces 'ap1-mp2' y 'ap2-mp2', y solo existen en esta red configurada dos estaciones base que se comunican entre ellas. Además de por motivos físicos, también respalda la unicidad de los \textit{access points} las propiedades características de las redes SDN: el controlador se comunica con todos los puntos de acceso o \textit{switches} de la red interconectándolos. Esto es muy útil para, por ejemplo, poder determinar qué nodos de la red están congestionados y crear rutas alternativas que disminuyan la densidad de tráfico en dichos equipos y la red se autoequilibre. Esta es una de las ventajas de este tipo de redes definidas por software, su capacidad de autogestión y autoconocimiento.\par 
 
 Esta red analizada es sencilla y no tiene mucho sentido entonces que haya dos puntos de acceso diferentes. Sin embargo, cuando el tamaño de la red aumenta y hay varias estaciones base que se comunican entre ellas, sí que estaría suficientemente motivado el uso de varios puntos de acceso para, como se ha indicado en el párrafo anterior, poder verificar que realmente la red es capaz de autogestionarse. \par 
 
