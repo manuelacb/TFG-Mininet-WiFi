@@ -1,7 +1,3 @@
 \BOOKMARK [0][-]{chapter.1}{An\341lisis script meshAP.py}{}% 1
 \BOOKMARK [1][-]{section.1.1}{Configuraci\363n del script meshAP.py}{chapter.1}% 2
-\BOOKMARK [1][-]{section.1.2}{Topolog\355a inicial}{chapter.1}% 3
-\BOOKMARK [1][-]{section.1.3}{Establecimiento de la conexi\363n y configuraci\363n de las interfaces}{chapter.1}% 4
-\BOOKMARK [1][-]{section.1.4}{An\341lisis de los flujos de datos con pingall}{chapter.1}% 5
-\BOOKMARK [1][-]{section.1.5}{Capturando el tr\341fico OpenFlow entre el controlador y los access points}{chapter.1}% 6
-\BOOKMARK [1][-]{section.1.6}{Topolog\355a completa resultante}{chapter.1}% 7
+\BOOKMARK [1][-]{section.1.2}{Topolog\355a}{chapter.1}% 3

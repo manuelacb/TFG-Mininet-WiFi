@@ -1,0 +1,16 @@
+\babel@toc {spanish}{}
+\babel@toc {spanish}{}
+\babel@toc {spanish}{}
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces Posici\IeC {\'o}n de los nodos de la red meshAP.\relax }}{5}{figure.caption.6}
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Topolog\IeC {\'\i }a de la red meshAP.\relax }}{6}{figure.caption.7}
+\contentsline {figure}{\numberline {2.3}{\ignorespaces Consulta de ap1 al controlador\relax }}{17}{figure.caption.8}
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Respuesta del controlador a ap1\relax }}{18}{figure.caption.9}
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Consulta de ap2 al controlador\relax }}{19}{figure.caption.10}
+\contentsline {figure}{\numberline {2.6}{\ignorespaces Respuesta de modificaci\IeC {\'o}n del controlador a ap2\relax }}{19}{figure.caption.11}
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Respuesta del controlador con las acciones a instalar en ap2\relax }}{20}{figure.caption.12}
+\contentsline {figure}{\numberline {2.8}{\ignorespaces Consulta de ap1 del \texttt {ICMP echo request}\relax }}{20}{figure.caption.13}
+\contentsline {figure}{\numberline {2.9}{\ignorespaces Respuesta del controlador con la modificaci\IeC {\'o}n del flujo en ap2\relax }}{21}{figure.caption.14}
+\contentsline {figure}{\numberline {2.10}{\ignorespaces Respuesta del controlador con las acciones a instalar en ap1\relax }}{21}{figure.caption.15}
+\contentsline {figure}{\numberline {2.11}{\ignorespaces Topolog\IeC {\'\i }a resultante de la red meshAP.\relax }}{22}{figure.caption.16}

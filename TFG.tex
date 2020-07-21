@@ -1,0 +1,159 @@
+\documentclass[a4paper,12pt,twoside,spanish]{book}
+% Inicialización del documento
+
+% Paquetes
+\usepackage [spanish]{babel}
+\usepackage[utf8]{inputenc}
+\selectlanguage{spanish}
+\usepackage[dvips]{graphicx}
+\usepackage[colorlinks=true,linkcolor=black]{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{mathptmx} % Times New Roman en LaTeX
+\usepackage{amssymb}
+\usepackage{anysize}
+\usepackage{latexsym}
+\usepackage{epsfig}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{color}
+\usepackage{wrapfig}
+\usepackage{subfigure}
+\usepackage{epstopdf}
+\usepackage{booktabs}
+\usepackage[T1]{fontenc}
+\usepackage[outermargin=-2.5cm,]{fullwidth}
+\usepackage{boxedminipage}
+\usepackage{shadow}
+\usepackage{lscape}
+\usepackage{titlesec}
+\usepackage{curves}
+\usepackage{rotating}
+\usepackage{calc}
+\usepackage{url}
+\usepackage{babelbib}
+\usepackage{hyperref}
+\hypersetup{
+	citecolor=black
+}
+\usepackage[justification=centering]{caption}
+\usepackage{setspace}
+\usepackage{nomencl}
+\makenomenclature
+\usepackage[nottoc]{tocbibind} % Para que aparezcan la tabla de figuras y cuadros en el índice
+\renewcommand{\nomname}{Lista de acrónimos y abreviaturas}
+
+
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\ttfamily\footnotesize,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+\lstset{style=mystyle}
+
+% Paquetes
+
+% Formato de las páginas
+\onehalfspace 
+\raggedbottom
+\pagestyle{fancy} 
+\addtolength{\headwidth}{\marginparsep}
+\setlength{\headheight}{25pt}
+\setlength{\oddsidemargin}{0cm}
+\setlength{\evensidemargin}{0cm}
+\marginsize{2.5cm}{2.5cm}{2.5cm}{2.5cm}
+\fancyhf{}
+\fancyhead[LE,RO]{\bfseries \thepage} 
+\fancyhead[LO]{\sffamily\scshape\footnotesize\rightmark} 
+\fancyhead[RE]{\sffamily\scshape\footnotesize\leftmark} 
+\addtolength{\parskip}{5pt}
+% Formato de las páginas
+
+% Inicio del documento
+\title{TRABAJO FIN DE GRADO}
+\begin{document}
+
+% Ruptura silábica
+\input{./Capitulo_0/Hyphenations.tex}
+% Ruptura silábica
+
+% Portada
+\thispagestyle{empty}
+\input{./Capitulo_0/Portada}
+\newpage
+\thispagestyle{empty}
+\cleardoublepage
+% Portada
+
+% Agradecimientos
+\thispagestyle{empty}
+\input{./Capitulo_0/Agradecimientos}
+\newpage
+\thispagestyle{empty}
+\cleardoublepage
+% Agradecimientos
+
+\frontmatter
+
+% Tablas de contenido
+\setcounter{tocdepth}{5}
+\addtocontents{toc}{\bigskip 
+\textbf{\hspace{-0.61cm}}\par}
+\addtocontents{toc}{\bigskip 
+\textbf{\hspace{-0.61cm}Agradecimientos}\par}
+\addtocontents{toc}{\bigskip \textbf{\hspace{-0.61cm}Resumen}\par}
+\tableofcontents
+\listoffigures
+\listoftables
+\printnomenclature
+\addcontentsline{toc}{chapter}{Lista de acrónimos y abreviaturas}
+% Tablas de contenido
+
+\mainmatter
+
+% Capítulos
+\input{./Capitulo_1/Capitulo_1}
+\input{./meshAP/cap_meshAP}
+\input{./Capitulo_3/Capitulo_3}
+\input{./Capitulo_4/Capitulo_4}
+\input{./Capitulo_5/Capitulo_5}
+\input{./Capitulo_6/Capitulo_6}
+% Capítulos
+
+% Apéndices
+\appendix
+\input{./Apendices/Equivalencias}
+% Apéndices
+
+\backmatter
+
+% Bibliografía
+\bibliography{ReferenciasPFC}
+\bibliographystyle{plain}
+%\nocite{*}
+% Bibliografía
+
+\end{document}
+% Final del documento
