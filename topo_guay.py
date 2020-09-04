@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-'This example shows how to create wireless link between two APs'
-
 import sys
 
 from mininet.node import Controller
@@ -42,49 +40,41 @@ def topology(stp):
     sta11 = net.addStation('sta11', mac='00:00:00:00:00:11', IP='10.0.0.11/8',
                           position='40,30,0', f=5)
     if stp:
-        ap4 = net.addAccessPoint('ap4', ssid='new-ssid4', mode='g', channel='1',
-                                 failMode="standalone", position='100,100,0',
-                                 stp=True)
-        ap5 = net.addAccessPoint('ap5', ssid='new-ssid5', mode='g', channel='1',
-                                 failMode="standalone", position='50,100,0',
-                                 stp=True)
-        ap6 = net.addAccessPoint('ap6', ssid='new-ssid6', mode='g', channel='1',
-                                 failMode="standalone", position='50,50,0',
-                                 stp=True)
-        ap7 = net.addAccessPoint('ap7', ssid='new-ssid7', mode='g', channel='1',
-                                 failMode="standalone", position='100,50,0',
-                                 stp=True)
-        ap9 = net.addAccessPoint('ap9', wlans=4, ssid='ssid9,,,', mode='g',
-                                 failMode="standalone", position='30,40,0',
-                                 stp=True)
-        ap10 = net.addAccessPoint('ap10', wlans=2, ssid='ssid10,', mode='g',
-                                 failMode="standalone", position='30,35,0',
-                                 stp=True)
+        ap4 = net.addAccessPoint('ap4', ssid='new-ssid4', mac='00:00:00:00:04:00', mode='g', channel='1',
+                                 failMode="standalone", position='100,100,0', stp=True)
+        ap5 = net.addAccessPoint('ap5', ssid='new-ssid5', mac='00:00:00:00:05:00', mode='g', channel='1',
+                                 failMode="standalone", position='50,100,0', stp=True)
+        ap6 = net.addAccessPoint('ap6', ssid='new-ssid6', mac='00:00:00:00:06:00', mode='g', channel='1',
+                                 failMode="standalone", position='50,50,0', stp=True)
+        ap7 = net.addAccessPoint('ap7', ssid='new-ssid7', mac='00:00:00:00:07:00', mode='g', channel='1',
+                                 failMode="standalone", position='100,50,0', stp=True)
+        # ap9 = net.addAccessPoint('ap9', wlans=4, ssid='ssid9,,,', mac='00:00:00:00:09:00', mode='g',
+        #                          failMode="standalone", position='30,40,0', stp=True)
+        # ap10 = net.addAccessPoint('ap10', wlans=2, ssid='ssid10,', mac='00:00:00:00:10:00', mode='g',
+        #                          failMode="standalone", position='30,35,0', stp=True)
     else:
-        ap4 = net.addAccessPoint('ap4', ssid='new-ssid4', mode='g', channel='1',
+        ap4 = net.addAccessPoint('ap4', ssid='new-ssid4', mac='00:00:00:00:04:00', mode='g', channel='1',
                                  failMode="standalone", position='100,100,0')
-        ap5 = net.addAccessPoint('ap5', ssid='new-ssid5', mode='g', channel='1',
+        ap5 = net.addAccessPoint('ap5', ssid='new-ssid5', mac='00:00:00:00:05:00', mode='g', channel='1',
                                  failMode="standalone", position='50,100,0')
-        ap6 = net.addAccessPoint('ap6', ssid='new-ssid6', mode='g', channel='1',
+        ap6 = net.addAccessPoint('ap6', ssid='new-ssid6', mac='00:00:00:00:06:00', mode='g', channel='1',
                                  failMode="standalone", position='50,50,0')
-        ap7 = net.addAccessPoint('ap7', ssid='new-ssid7', mode='g', channel='1',
+        ap7 = net.addAccessPoint('ap7', ssid='new-ssid7', mac='00:00:00:00:07:00', mode='g', channel='1',
                                  failMode="standalone", position='100,50,0')
-        ap9 = net.addAccessPoint('ap9', wlans=4, ssid='ssid9,,,', mode='g',
+    ap9 = net.addAccessPoint('ap9', wlans=4, ssid='ssid9,,,', mac='00:00:00:00:09:00', mode='g',
                                  failMode="standalone", position='30,40,0')
-        ap10 = net.addAccessPoint('ap10', wlans=2, ssid='ssid10,', mode='g',
+    ap10 = net.addAccessPoint('ap10', wlans=2, ssid='ssid10,', mac='00:00:00:00:10:00', mode='g',
                                  failMode="standalone", position='30,35,0')
-
+    ap11 = net.addAccessPoint('ap11', wlans=2, ssid='ssid11,', mac='00:00:00:00:11:00', mode='g',
+                                 failMode="standalone", position='30,35,0')
 
     ap1 = net.addAccessPoint('ap1', wlans=3, ssid='ssid1,,', position='20,100,0', channel='1')
     ap2 = net.addAccessPoint('ap2', wlans=3, ssid='ssid2,,', position='40,100,0', channel='1')
     ap3 = net.addAccessPoint('ap3', wlans=3, ssid='ssid3,,', position='40,80,0', channel='1')
 
-
-
     c0 = net.addController('c0')
 
     net.setPropagationModel(model="logDistance", exp=5)
-
 
     info("*** Configuring wifi nodes\n")
     net.configureWifiNodes()
@@ -102,7 +92,7 @@ def topology(stp):
     net.addLink(ap3, sta8)
     net.addLink(ap9, sta9)
     net.addLink(ap10, sta10)
-    net.addLink(ap9, sta11)
+    net.addLink(ap11, sta11)
 
     net.addLink(ap4, ap5)
     net.addLink(ap5, ap6)
@@ -111,6 +101,7 @@ def topology(stp):
     net.addLink(ap2, ap4)
 
     net.addLink(ap9, ap10)
+    net.addLink(ap9, ap11)
     net.addLink(ap3, ap9)
 
     net.addLink(ap1, intf='ap1-wlan3', cls=mesh, ssid='mesh-ssid', channel='5')
@@ -132,6 +123,7 @@ def topology(stp):
     ap7.start([c0])
     ap9.start([c0])
     ap10.start([c0])
+    ap11.start([c0])
 
 
     info("*** Running CLI\n")
