@@ -48,10 +48,6 @@ def topology(stp):
                                  failMode="standalone", position='50,50,0', stp=True)
         ap7 = net.addAccessPoint('ap7', ssid='new-ssid7', mac='00:00:00:00:07:00', mode='g', channel='1',
                                  failMode="standalone", position='100,50,0', stp=True)
-        # ap9 = net.addAccessPoint('ap9', wlans=4, ssid='ssid9,,,', mac='00:00:00:00:09:00', mode='g',
-        #                          failMode="standalone", position='30,40,0', stp=True)
-        # ap10 = net.addAccessPoint('ap10', wlans=2, ssid='ssid10,', mac='00:00:00:00:10:00', mode='g',
-        #                          failMode="standalone", position='30,35,0', stp=True)
     else:
         ap4 = net.addAccessPoint('ap4', ssid='new-ssid4', mac='00:00:00:00:04:00', mode='g', channel='1',
                                  failMode="standalone", position='100,100,0')
@@ -74,7 +70,7 @@ def topology(stp):
 
     c0 = net.addController('c0')
 
-    net.setPropagationModel(model="logDistance", exp=5)
+    net.setPropagationModel(model="logDistance", exp=3)
 
     info("*** Configuring wifi nodes\n")
     net.configureWifiNodes()
